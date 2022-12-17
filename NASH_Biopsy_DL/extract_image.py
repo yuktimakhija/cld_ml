@@ -3,6 +3,7 @@ import requests
 import os
 import docx
 import scandir
+import docx2txt
 import pandas as pd
 from tqdm import tqdm 
 
@@ -40,8 +41,10 @@ def img_from_docx(docx_file_name):
             # Save the image to a file
             open(os.path.join('biopsy_images', image_file), 'wb').write(shape.blob)
 
-# def NAS_from_docx(docx_file_name):
-    
+def NAS_from_docx(docx_file_name):
+    # Extract text from DOCX file
+    text = docx2txt.process(docx_file_name)
+
 
 def main(folder_path,excel_path):
     # dir_list = os.listdir(folder_path)[:1]
@@ -58,3 +61,4 @@ def main(folder_path,excel_path):
                         # with open(os.path.join(paths, file), 'r') as f:
                         img_from_docx(os.path.join(paths, file))
         
+main("D:/HISTO and CYTO REPORT/2022",'NASH.xlsx')
