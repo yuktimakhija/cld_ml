@@ -1,11 +1,13 @@
 import lxml.etree as ET
-import requests
-import os
+import shutil
+import os, re
 import docx
 import scandir
 import docx2txt
 import pandas as pd
 from tqdm import tqdm 
+import tempfile
+import subprocess
 
 def img_from_xml(xml_file_name):
     tree = ET.parse(xml_file_name)
@@ -15,50 +17,98 @@ def img_from_xml(xml_file_name):
     images = root.findall('.//image')
 
     # Iterate through the image elements and download the images
-    count = 0
-    for image in images:
-        count+=1
-        # Get the image URL
-        url = image.get('url')
-        # Download the image
-        response = requests.get(url)
-        # Save the image to a file
-        # To use image_name: os.path.basename(url)
-        # To use image number: count
-        open(os.path.join('biopsy_images', xml_file_name+'_'+count), 'wb').write(response.content)
+    # count = 0
+    # for image in images:
+    #     count+=1
+    #     # Get the image URL
+    #     url = image.get('url')
+    #     # Download the image
+    #     response = requests.get(url)
+    #     # Save the image to a file
+    #     # To use image_name: os.path.basename(url)
+    #     # To use image number: count
+    #     open(os.path.join('biopsy_images', xml_file_name+'_'+count), 'wb').write(response.content)
 
-def img_from_docx(docx_file_name):
+def img_from_docx(docx_file, short_filename):
+    print('img_from_docx started')
     # To use install python-docx
-    document = docx.Document(docx_file_name)
+    if docx_file.endswith('.doc'):
+       # converting .doc to .docx
+       doc_file = docx_file
+       docx_file = docx_file + 'x'
+       if not os.path.exists(docx_file):
+          os.system('antiword ' + doc_file + ' > ' + docx_file)
+    # document = docx.Document(docx_file)
 
     # Iterate through the paragraphs in the document
-    for paragraph in document.paragraphs:
-        # Iterate through the inline shapes in the paragraph 
-        # Remove the following loop if only first image needs to be extracted 
-        for shape in paragraph.inline_shapes:
-            # Get the image file name
-            image_file = shape.filename
-            # Save the image to a file
-            open(os.path.join('biopsy_images', image_file), 'wb').write(shape.blob)
+    # count = 0
+    # for paragraph in document.paragraphs:
+    #     # Iterate through the inline shapes in the paragraph 
+    #     # Remove the following loop if only first image needs to be extracted 
+    #     for shape in paragraph.inline_shapes:
+    #         # Get the image file name
+    #         # Save the image to a file
+    #         open(os.path.join('biopsy_images', short_filename+'_'+count+'.jpg'), 'wb').write(shape.blob)
+    #         count += 1
+
+    get_imgs_from_document(docx_file, short_filename, 'docx')
+    
+    print('img_from_docx ended')
 
 def NAS_from_docx(docx_file_name):
     # Extract text from DOCX file
     text = docx2txt.process(docx_file_name)
 
+def get_imgs_from_document(filename, short_filename, filetype):
+    # filetype is rtx or docx
+    tempdir = tempfile.TemporaryDirectory()
+    text = subprocess.check_output(['pandoc', filename, '-f', filetype, '-t', 'plain', '--extract-media', tempdir.name])
+
+    # search for the ground truth string
+    # re.search ('S(\d.\d+)F(\d)I(\d)', str(text))
+
+    for paths, dirs, files in scandir.walk(tempdir.name):
+        for file in files:
+            count = 0
+            if file.endswith('.jpg'):
+                count+=1
+                if filetype == 'rtf':
+                    srcpath = os.path.join(tempdir.name, file)
+                elif filetype == 'docx':
+                    srcpath = os.path.join(tempdir.name, 'media', file)
+
+                destpath = os.path.join('biopsy_images', short_filename+'_'+count+'.jpg')
+                shutil.copy(srcpath, destpath)
+
+
+    tempdir.cleanup()
+
+
 
 def main(folder_path,excel_path):
     # dir_list = os.listdir(folder_path)[:1]
 
-    df = pd.read_excel(excel_path).set_index('SLIDE NO')
+    # df = pd.read_excel(excel_path).set_index('SLIDE NO')
+    df = pd.read_excel(excel_path)
     for slide_number in tqdm(df.index):
-        if slide_number.endswith('22'):
-            index = slide_number.replace('-','').replace('/','')
+    # for i in tqdm(df.index):
+        # slide_number = df.loc[i,"SLIDE NO"]
+        print(slide_number)
+        print(str(slide_number))
+        if str(slide_number).endswith('22'):
+            print('2022 file found')
+            index = str(slide_number).replace('-','').replace('/','')
             index_lower = index.lower()
             for paths, dirs, files in scandir.walk(folder_path):
             #for (paths, dirs, files) in os.walk(folder):
                 for file in files:
                     if index in file or index_lower in file:
                         # with open(os.path.join(paths, file), 'r') as f:
-                        img_from_docx(os.path.join(paths, file))
-        
-main("D:/HISTO and CYTO REPORT/2022",'NASH.xlsx')
+                        filename = os.path.join(paths, file)
+                        if filename.endswith('.docx'):
+                            img_from_docx(filename, file)
+                        else:
+                            if open(filename)[:5] == '{\\rtf':
+                                get_imgs_from_document(filename, file, 'rtf')
+
+main("D:/HISTO and CYTO REPORT/2022/",'copy_nash.xlsx')
