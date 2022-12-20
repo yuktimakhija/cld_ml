@@ -108,9 +108,10 @@ def main(folder_path,excel_path,gt_csv_path):
                         # with open(os.path.join(paths, file), 'r') as f:
                         filename = os.path.join(paths, file)
                         if filename.endswith('.docx'):
-                            img_from_docx(filename, file,gt_csv_path)
+                            img_from_docx(filename, file,gt_df)
                         else:
                             if open(filename)[:5] == '{\\rtf':
                                 get_imgs_from_document(filename, file, 'rtf',gt_df)
+    gt_df.to_csv('ground_truth.csv')
 
 main("D:/HISTO and CYTO REPORT/2022/",'copy_nash.xlsx','ground_truth.csv')
