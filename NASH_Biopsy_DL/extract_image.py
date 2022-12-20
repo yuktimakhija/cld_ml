@@ -86,7 +86,7 @@ def get_imgs_from_document(filename, short_filename, filetype, gt_df):
 
 
 
-def main(folder_path,excel_path,gt_csv_path):
+def main(folder_path,excel_path,gt_csv_path,year):
     # dir_list = os.listdir(folder_path)[:1]
 
     # df = pd.read_excel(excel_path).set_index('SLIDE NO')
@@ -97,8 +97,9 @@ def main(folder_path,excel_path,gt_csv_path):
         # slide_number = df.loc[i,"SLIDE NO"]
         # print(slide_number)
         # print(str(slide_number))
-        if str(slide_number).endswith('22'):
-            print('2022 file found')
+        # paths, dirs, files = next(iter(scandir.walk(dir)))
+        if str(slide_number).endswith(year):
+            # print('2022 file found')
             index = str(slide_number).replace('-','').replace('/','')
             index_lower = index.lower()
             for paths, dirs, files in scandir.walk(folder_path):
@@ -114,4 +115,5 @@ def main(folder_path,excel_path,gt_csv_path):
                                 get_imgs_from_document(filename, file, 'rtf',gt_df)
     gt_df.to_csv('ground_truth.csv')
 
-main("D:/HISTO and CYTO REPORT/2022/",'copy_nash.xlsx','ground_truth.csv')
+main("D:/HISTO and CYTO REPORT/2022/",'copy_nash.xlsx','ground_truth.csv','22')
+main("F:/HISTO AND CYTO REPORTS/2021/",'copy_nash.xlsx','ground_truth.csv','21')
