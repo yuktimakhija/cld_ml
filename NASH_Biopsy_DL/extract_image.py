@@ -113,4 +113,4 @@ def main(folder_path,excel_path,gt_csv_path):
                             if open(filename)[:5] == '{\\rtf':
                                 get_imgs_from_document(filename, file, 'rtf',gt_df)
 
-main("D:/HISTO and CYTO REPORT/2022/",'copy_nash.xlsx')
+main("D:/HISTO and CYTO REPORT/2022/",'copy_nash.xlsx','ground_truth.csv')
