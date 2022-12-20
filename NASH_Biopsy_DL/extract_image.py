@@ -77,7 +77,7 @@ def get_imgs_from_document(filename, short_filename, filetype, gt_df):
                     elif filetype == 'docx':
                         srcpath = os.path.join(tempdir.name, 'media', file)
 
-                    destpath = os.path.join('biopsy_images', short_filename+'_'+count+'.jpg')
+                    destpath = os.path.join('biopsy_images', short_filename+'_'+str(count)+'.jpg')
                     shutil.copy(srcpath, destpath)
                     gt = re.findall('S(\d)A(\d)F(\d)',str(text))
                     gt_df[short_filename] = gt
@@ -90,7 +90,7 @@ def main(folder_path,excel_path,gt_csv_path,year):
     # dir_list = os.listdir(folder_path)[:1]
 
     # df = pd.read_excel(excel_path).set_index('SLIDE NO')
-    df = pd.read_excel(excel_path)
+    df = pd.read_excel(excel_path).set_index('SLIDE NO')
     gt_df = pd.read_csv(gt_csv_path).set_index('slide_number')
     for slide_number in tqdm(df.index):
     # for i in tqdm(df.index):
@@ -111,8 +111,8 @@ def main(folder_path,excel_path,gt_csv_path,year):
                         if filename.endswith('.docx'):
                             img_from_docx(filename, file,gt_df)
                         else:
-                            # if open(filename)[:5] == '{\\rtf':
-                            if open(filename, "r").readlines()[:5] == '{\\rtf':
+                            if open(filename).read()[:5] == '{\\rtf':
+                            # if open(filename), "r").readlines()[:5] == '{\\rtf':
                                 get_imgs_from_document(filename, file, 'rtf',gt_df)
     gt_df.to_csv('ground_truth.csv')
 
